@@ -59,7 +59,9 @@ impl<'src> Lexer<'src> {
             ')' => Token::simple(self.line, self.column, TokenKind::RightParen),
             '=' => Token::simple(self.line, self.column, TokenKind::Equals),
             ',' => Token::simple(self.line, self.column, TokenKind::Comma),
-            c if c.is_numeric() => {
+            c if c.is_digit(10) => {
+                // First digit of numbers must be a base 10 digit (either 0 for special literals
+                // and 0 itself, or 1-9 for numbers) which is why we pass 10 for the radix above
                 self.retreat(1);
                 self.consume_number()
             }
