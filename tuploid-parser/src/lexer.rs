@@ -63,8 +63,8 @@ impl<'src> Lexer<'src> {
                 self.retreat(1);
                 self.consume_number()
             }
-            _ => {
-                self.retreat(1);
+            c => {
+                self.retreat(c.len_utf8());
                 self.skip_whitespace();
                 self.consume_identifier()
             }
@@ -74,7 +74,7 @@ impl<'src> Lexer<'src> {
     fn next_char(&mut self) -> Option<char> {
         let next = self.src[self.cursor..].chars().next();
         self.column += 1;
-        self.cursor += 1;
+        self.cursor += next.clone().map(|c| c.len_utf8()).unwrap_or_default();
         next
     }
 
