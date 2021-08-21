@@ -134,11 +134,16 @@ impl<'src> Lexer<'src> {
                 self.retreat(1);
                 self.consume_number()
             }
-            c => {
+            c if is_valid_identifier_start_char(c) => {
                 self.retreat(c.len_utf8());
                 self.skip_whitespace();
                 self.consume_identifier()
             }
+            c => Token::error(
+                self.line,
+                self.column,
+                format!("Unexpected character '{}'", c).into(),
+            ),
         }
     }
 
@@ -163,7 +168,7 @@ impl<'src> Lexer<'src> {
 
     fn consume_identifier(&mut self) -> Token {
         let identifier_end = self.src[self.cursor..]
-            .find(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .find(|c: char| !is_valid_identifier_char(c))
             .unwrap_or_else(|| self.src.len());
 
         let identifier = Token::identifier(
@@ -250,6 +255,14 @@ impl<'src> Lexer<'src> {
         self.column = 1;
         token
     }
+}
+
+fn is_valid_identifier_start_char(c: char) -> bool {
+    c.is_alphabetic() || c == '_'
+}
+
+fn is_valid_identifier_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_'
 }
 
 #[derive(Debug)]
