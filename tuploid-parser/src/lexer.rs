@@ -25,12 +25,13 @@ impl<'src> Lexer<'src> {
             _ => return Token::eof(self.line, self.column),
         };
 
+        use TokenKind::*;
         match c {
             'i' => {
                 if let Some(c) = self.peek_char() {
                     match c {
-                        'f' => Token::simple(self.line, self.column, TokenKind::If),
-                        'n' => Token::simple(self.line, self.column, TokenKind::In),
+                        'f' => Token::simple(self.line, self.column, If),
+                        'n' => Token::simple(self.line, self.column, In),
                         _ => {
                             self.retreat(1);
                             self.consume_identifier()
@@ -44,21 +45,89 @@ impl<'src> Lexer<'src> {
             'l' => {
                 if self.next_is("oop") {
                     self.cursor += 3;
-                    Token::simple(self.line, self.column, TokenKind::Loop)
+                    Token::simple(self.line, self.column, Loop)
                 } else if self.next_is("et") {
                     self.cursor += 2;
-                    Token::simple(self.line, self.column, TokenKind::Let)
+                    Token::simple(self.line, self.column, Let)
                 } else {
                     self.retreat(1);
                     self.consume_identifier()
                 }
             }
-            ':' => Token::simple(self.line, self.column, TokenKind::Colon),
-            ';' => Token::simple(self.line, self.column, TokenKind::Semicolon),
-            '(' => Token::simple(self.line, self.column, TokenKind::LeftParen),
-            ')' => Token::simple(self.line, self.column, TokenKind::RightParen),
-            '=' => Token::simple(self.line, self.column, TokenKind::Equals),
-            ',' => Token::simple(self.line, self.column, TokenKind::Comma),
+            't' => {
+                if self.next_is("ype") {
+                    self.cursor += 3;
+                    Token::simple(self.line, self.column, Type)
+                } else {
+                    self.retreat(1);
+                    self.consume_identifier()
+                }
+            }
+            ':' => Token::simple(self.line, self.column, Colon),
+            ';' => Token::simple(self.line, self.column, Semicolon),
+            '(' => Token::simple(self.line, self.column, LeftParen),
+            ')' => Token::simple(self.line, self.column, RightParen),
+            '{' => Token::simple(self.line, self.column, LeftCurly),
+            '}' => Token::simple(self.line, self.column, RightCurly),
+            '=' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, EqualsEquals)
+                } else {
+                    Token::simple(self.line, self.column, Equals)
+                }
+            }
+            ',' => Token::simple(self.line, self.column, Comma),
+            '+' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, PlusEquals)
+                } else {
+                    Token::simple(self.line, self.column, Plus)
+                }
+            }
+            '-' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, MinusEquals)
+                } else {
+                    Token::simple(self.line, self.column, Minus)
+                }
+            }
+            '*' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, StarEquals)
+                } else {
+                    Token::simple(self.line, self.column, Star)
+                }
+            }
+            '/' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, SlashEquals)
+                } else if self.peek_char() == Some('/') {
+                    self.consume_single_line_comment()
+                } else {
+                    Token::simple(self.line, self.column, Slash)
+                }
+            }
+            '&' => {
+                if self.peek_char() == Some('&') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, AmpersandAmpersand)
+                } else {
+                    Token::simple(self.line, self.column, Ampersand)
+                }
+            }
+            '|' => {
+                if self.peek_char() == Some('|') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, PipePipe)
+                } else {
+                    Token::simple(self.line, self.column, Pipe)
+                }
+            }
             c if c.is_digit(10) => {
                 // First digit of numbers must be a base 10 digit (either 0 for special literals
                 // and 0 itself, or 1-9 for numbers) which is why we pass 10 for the radix above
@@ -167,6 +236,20 @@ impl<'src> Lexer<'src> {
 
         self.cursor += to_skip;
     }
+
+    fn consume_single_line_comment(&mut self) -> Token {
+        while let Some(c) = self.peek_char() {
+            self.cursor += c.len_utf8();
+            if c == '\n' {
+                break;
+            }
+        }
+
+        let token = Token::simple(self.line, self.column, TokenKind::Comment);
+        self.line += 1;
+        self.column = 1;
+        token
+    }
 }
 
 #[derive(Debug)]
@@ -245,14 +328,31 @@ pub enum TokenKind<'lexer> {
     In,
 
     Let,
+    Type,
 
     Colon,
     Semicolon,
     LeftParen,
     RightParen,
+    LeftCurly,
+    RightCurly,
     Comma,
     Equals,
+    Plus,
+    Minus,
+    Star,
+    Slash,
+    EqualsEquals,
+    PlusEquals,
+    MinusEquals,
+    StarEquals,
+    SlashEquals,
+    Ampersand,
+    AmpersandAmpersand,
+    Pipe,
+    PipePipe,
 
+    Comment,
     Identifier(&'lexer str),
     Number(Number),
 }
