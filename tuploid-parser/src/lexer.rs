@@ -144,6 +144,22 @@ impl<'src> Lexer<'src> {
                     Token::simple(self.line, self.column, Pipe)
                 }
             }
+            '<' => {
+                if self.peek_char() == Some('|') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, LessThanEquals)
+                } else {
+                    Token::simple(self.line, self.column, LessThan)
+                }
+            }
+            '>' => {
+                if self.peek_char() == Some('|') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, GreatherThanEquals)
+                } else {
+                    Token::simple(self.line, self.column, GreaterThan)
+                }
+            }
             c if c.is_digit(10) => {
                 // First digit of numbers must be a base 10 digit (either 0 for special literals
                 // and 0 itself, or 1-9 for numbers) which is why we pass 10 for the radix above
@@ -384,6 +400,10 @@ pub enum TokenKind<'lexer> {
     AmpersandAmpersand,
     Pipe,
     PipePipe,
+    LessThan,
+    LessThanEquals,
+    GreaterThan,
+    GreatherThanEquals,
 
     Comment,
     Identifier(&'lexer str),
