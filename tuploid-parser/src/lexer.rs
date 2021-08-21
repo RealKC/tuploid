@@ -120,6 +120,22 @@ impl<'src> Lexer<'src> {
                     Token::simple(self.line, self.column, Ampersand)
                 }
             }
+            '!' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, NotEquals)
+                } else {
+                    Token::simple(self.line, self.column, Not)
+                }
+            }
+            '~' => {
+                if self.peek_char() == Some('=') {
+                    self.next_char();
+                    Token::simple(self.line, self.column, TildeEquals)
+                } else {
+                    Token::simple(self.line, self.column, Tilde)
+                }
+            }
             '|' => {
                 if self.peek_char() == Some('|') {
                     self.next_char();
@@ -355,11 +371,15 @@ pub enum TokenKind<'lexer> {
     Minus,
     Star,
     Slash,
+    Not,
+    Tilde,
     EqualsEquals,
     PlusEquals,
     MinusEquals,
     StarEquals,
     SlashEquals,
+    NotEquals,
+    TildeEquals,
     Ampersand,
     AmpersandAmpersand,
     Pipe,
